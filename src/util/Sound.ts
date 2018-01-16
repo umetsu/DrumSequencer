@@ -33,7 +33,6 @@ export default class Sound {
                         resolve();
                     },
                     (e: Error) => {
-                        console.error(e);
                         reject(e);
                     });
             };
