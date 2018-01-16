@@ -1,19 +1,9 @@
 import * as React from 'react';
 import Control from '../component/Control';
+import State from '../state';
+import DrumSet from '../util/DrumSet';
 import Sound from '../util/Sound';
 import BpmTicker from '../util/BpmTicker';
-
-interface DrumSet {
-    bassDrum: Sound;
-    hat: Sound;
-    snareDrum: Sound;
-    cymbal: Sound;
-}
-
-interface State {
-    readonly canSoundPlay: boolean;
-    readonly bpm: number;
-}
 
 class App extends React.Component<{}, State> {
 
