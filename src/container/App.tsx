@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Control from '../component/Control';
 import Sound from '../util/Sound';
+import BpmTicker from '../util/BpmTicker';
 
 interface DrumSet {
     bassDrum: Sound;
@@ -11,12 +12,14 @@ interface DrumSet {
 
 interface State {
     readonly canSoundPlay: boolean;
+    readonly bpm: number;
 }
 
 class App extends React.Component<{}, State> {
 
     state: State = {
         canSoundPlay: false,
+        bpm: 20,
     };
 
     private drumSet: DrumSet = {
@@ -25,6 +28,8 @@ class App extends React.Component<{}, State> {
         hat: new Sound('https://raw.githubusercontent.com/umetsu/DrumSequencer/master/asset/hat.wav'),
         cymbal: new Sound('https://raw.githubusercontent.com/umetsu/DrumSequencer/master/asset/cymbal.wav'),
     };
+
+    private bpmTicker: BpmTicker = new BpmTicker();
 
     componentDidMount() {
         const drumSet = this.drumSet;
@@ -35,6 +40,12 @@ class App extends React.Component<{}, State> {
             .then(() => {
                 this.state = {...this.state, canSoundPlay: true};
             });
+
+        this.bpmTicker.onTick()
+            .subscribe(() => {
+                this.playBassDrum();
+            });
+        this.bpmTicker.start(this.state.bpm);
     }
 
     render() {
