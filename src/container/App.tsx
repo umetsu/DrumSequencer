@@ -1,16 +1,39 @@
 import * as React from 'react';
+import { Subscription } from 'rxjs/Subscription';
 import Control from '../component/Control';
-import State from '../state';
+import State, { EditingTrack } from '../state';
 import DrumSet from '../util/DrumSet';
 import Sound from '../util/Sound';
 import BpmTicker from '../util/BpmTicker';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+
+const initialState: State = {
+    canSoundPlay: false,
+    bpm: 100,
+    editingTrack: EditingTrack.BASS_DRUM,
+    bassDrumNotes: [
+        true, false, false, false, false, false, false, false,
+        true, false, false, false, false, false, false, false
+    ],
+    snareDrumNotes: [
+        false, false, false, false, true, false, false, false,
+        false, false, false, false, true, false, false, false
+    ],
+    hatNotes: [
+        true, false, true, false, true, false, true, false,
+        true, false, true, false, true, false, true, false
+    ],
+    cymbalNotes: [
+        false, false, false, false, false, false, false, false,
+        false, false, false, false, false, false, false, false
+    ],
+    currentNoteIndex: null,
+    isPlaying: false,
+};
 
 class App extends React.Component<{}, State> {
 
-    state: State = {
-        canSoundPlay: false,
-        bpm: 20,
-    };
+    state: State = initialState;
 
     private drumSet: DrumSet = {
         bassDrum: new Sound('https://raw.githubusercontent.com/umetsu/DrumSequencer/master/asset/bassdrum.wav'),
@@ -20,6 +43,7 @@ class App extends React.Component<{}, State> {
     };
 
     private bpmTicker: BpmTicker = new BpmTicker();
+    private subscription: Subscription = Subscription.EMPTY;
 
     componentDidMount() {
         const drumSet = this.drumSet;
@@ -28,53 +52,68 @@ class App extends React.Component<{}, State> {
                 return s.load();
             }))
             .then(() => {
-                this.state = {...this.state, canSoundPlay: true};
+                this.setState({...this.state, canSoundPlay: true});
             });
+    }
 
-        this.bpmTicker.onTick()
-            .subscribe(() => {
-                this.playBassDrum();
-            });
-        this.bpmTicker.start(this.state.bpm);
+    componentDidUpdate(prevProps: {}, prevState: State) {
+        if (prevState.isPlaying) {
+            const index = prevState.currentNoteIndex != null ? prevState.currentNoteIndex : 0;
+            this.playSound(index);
+        }
     }
 
     render() {
         return (
-            <Control
-                onBassDrumClick={this.playBassDrum}
-                onSnareDrumClick={this.playSnareDrum}
-                onHatClick={this.playHat}
-                onCymbalClick={this.playCymbal}
-            />
+            <MuiThemeProvider>
+                <Control
+                    canSoundPlay={this.state.canSoundPlay}
+                    isPlaying={this.state.isPlaying}
+                    onPlayButtonClick={this.togglePlayingState}
+                />
+            </MuiThemeProvider>
         );
     }
 
-    playBassDrum = () => {
-        if (!this.state.canSoundPlay) {
-            return;
+    togglePlayingState = () => {
+        const nextPlayingState = !this.state.isPlaying;
+        const index = nextPlayingState ? this.state.currentNoteIndex : null;
+        this.setState({...this.state, isPlaying: nextPlayingState, currentNoteIndex: index});
+
+        // tickerのsubscribe/unsubscribeをどこで書くべきか悩む
+        if (nextPlayingState) {
+            this.subscription = this.bpmTicker.onTick()
+                .subscribe(() => {
+                    this.updateNoteIndex();
+                });
+            this.bpmTicker.start(this.state.bpm);
+        } else {
+            this.bpmTicker.stop();
+            this.subscription.unsubscribe();
         }
-        this.drumSet.bassDrum.play();
     }
 
-    playSnareDrum = () => {
-        if (!this.state.canSoundPlay) {
-            return;
-        }
-        this.drumSet.snareDrum.play();
+    updateNoteIndex = () => {
+        const nextIndex = this.state.currentNoteIndex == null ? 0 : (this.state.currentNoteIndex + 1) % 16;
+        this.setState({...this.state, currentNoteIndex: nextIndex});
     }
 
-    playHat = () => {
-        if (!this.state.canSoundPlay) {
-            return;
-        }
-        this.drumSet.hat.play();
-    }
-
-    playCymbal = () => {
-        if (!this.state.canSoundPlay) {
-            return;
-        }
-        this.drumSet.cymbal.play();
+    playSound = (index: number) => {
+        [
+            {notes: this.state.bassDrumNotes, sound: this.drumSet.bassDrum},
+            {notes: this.state.snareDrumNotes, sound: this.drumSet.snareDrum},
+            {notes: this.state.hatNotes, sound: this.drumSet.hat},
+            {notes: this.state.cymbalNotes, sound: this.drumSet.cymbal}
+        ]
+            .filter((data) => {
+                return data.notes[index];
+            })
+            .map((data) => {
+                return data.sound;
+            })
+            .forEach((sound) => {
+                sound.play();
+            });
     }
 }
 

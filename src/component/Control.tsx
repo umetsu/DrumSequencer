@@ -1,20 +1,22 @@
 import * as React from 'react';
+import RaisedButton from 'material-ui/RaisedButton';
 
 interface Props {
-    onBassDrumClick: () => void;
-    onSnareDrumClick: () => void;
-    onHatClick: () => void;
-    onCymbalClick: () => void;
+    canSoundPlay: boolean;
+    isPlaying: boolean;
+    onPlayButtonClick: () => void;
 }
 
-const Control = ({onBassDrumClick, onSnareDrumClick, onHatClick, onCymbalClick}: Props) => {
+const Control = ({canSoundPlay, isPlaying, onPlayButtonClick}: Props) => {
+    const playButtonText = isPlaying ? 'stop' : 'play';
     return (
         <div>
-            <h1>Hello World!</h1>
-            <button onClick={onBassDrumClick}>bd</button>
-            <button onClick={onSnareDrumClick}>sd</button>
-            <button onClick={onHatClick}>hh</button>
-            <button onClick={onCymbalClick}>rc</button>
+            <RaisedButton
+                label={playButtonText}
+                disabled={!canSoundPlay}
+                primary={true}
+                onClick={onPlayButtonClick}
+            />
         </div>
     );
 };
