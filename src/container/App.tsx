@@ -1,3 +1,4 @@
+import { AppBar } from 'material-ui';
 import * as React from 'react';
 import { Subscription } from 'rxjs/Subscription';
 import Control from '../component/Control';
@@ -59,6 +60,7 @@ class App extends React.Component<{}, State> {
     render() {
         return (
             <MuiThemeProvider>
+                <AppBar title="DrumSequencer"/>
                 <Control
                     canSoundPlay={this.state.canSoundPlay}
                     isPlaying={this.state.isPlaying}
