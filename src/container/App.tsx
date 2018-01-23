@@ -46,20 +46,13 @@ class App extends React.Component<{}, State> {
     private subscription: Subscription = Subscription.EMPTY;
 
     componentDidMount() {
-        const drumSet = this.drumSet;
-        Promise.all([drumSet.bassDrum, drumSet.snareDrum, drumSet.hat, drumSet.cymbal]
-            .map(s => {
-                return s.load();
-            }))
-            .then(() => {
-                this.setState({...this.state, canSoundPlay: true});
-            });
+        this.loadSounds();
     }
 
     componentDidUpdate(prevProps: {}, prevState: State) {
         if (prevState.isPlaying) {
             const index = prevState.currentNoteIndex != null ? prevState.currentNoteIndex : 0;
-            this.playSound(index);
+            this.playDrums(index);
         }
     }
 
@@ -75,30 +68,49 @@ class App extends React.Component<{}, State> {
         );
     }
 
-    togglePlayingState = () => {
-        const nextPlayingState = !this.state.isPlaying;
-        const index = nextPlayingState ? this.state.currentNoteIndex : null;
-        this.setState({...this.state, isPlaying: nextPlayingState, currentNoteIndex: index});
+    loadSounds = () => {
+        const drumSet = this.drumSet;
+        Promise.all([drumSet.bassDrum, drumSet.snareDrum, drumSet.hat, drumSet.cymbal]
+            .map(s => {
+                return s.load();
+            }))
+            .then(() => {
+                this.setState({...this.state, canSoundPlay: true});
+            });
+    }
 
-        // tickerのsubscribe/unsubscribeをどこで書くべきか悩む
-        if (nextPlayingState) {
-            this.subscription = this.bpmTicker.onTick()
-                .subscribe(() => {
-                    this.updateNoteIndex();
-                });
-            this.bpmTicker.start(this.state.bpm);
+    togglePlayingState = () => {
+        if (this.state.isPlaying) {
+            this.stopSound();
         } else {
-            this.bpmTicker.stop();
-            this.subscription.unsubscribe();
+            this.startSound();
         }
     }
 
-    updateNoteIndex = () => {
-        const nextIndex = this.state.currentNoteIndex == null ? 0 : (this.state.currentNoteIndex + 1) % 16;
-        this.setState({...this.state, currentNoteIndex: nextIndex});
+    startSound = () => {
+        this.subscription = this.bpmTicker.onTick()
+            .subscribe(() => {
+                this.updateNoteIndex();
+            });
+        this.bpmTicker.start(this.state.bpm);
+
+        this.setState({...this.state, isPlaying: true, currentNoteIndex: 0});
     }
 
-    playSound = (index: number) => {
+    stopSound = () => {
+        this.bpmTicker.stop();
+        this.subscription.unsubscribe();
+
+        this.setState({...this.state, isPlaying: false, currentNoteIndex: null});
+    }
+
+    updateNoteIndex = () => {
+        const currentIndex = this.state.currentNoteIndex == null ? 0 : this.state.currentNoteIndex;
+        const index = (currentIndex + 1) % 16;
+        this.setState({...this.state, currentNoteIndex: index});
+    }
+
+    playDrums = (index: number) => {
         [
             {notes: this.state.bassDrumNotes, sound: this.drumSet.bassDrum},
             {notes: this.state.snareDrumNotes, sound: this.drumSet.snareDrum},
