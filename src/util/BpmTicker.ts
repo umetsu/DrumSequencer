@@ -21,6 +21,10 @@ export default class BpmTicker {
         this.registerNextTimeout();
     }
 
+    changeBpm(bpm: number) {
+        this.bpm = bpm;
+    }
+
     stop() {
         this.isPlaying = false;
     }

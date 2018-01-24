@@ -55,6 +55,7 @@ class App extends React.Component<{}, State> {
             const index = prevState.currentNoteIndex != null ? prevState.currentNoteIndex : 0;
             this.playDrums(index);
         }
+        this.bpmTicker.changeBpm(prevState.bpm);
     }
 
     render() {
@@ -65,6 +66,8 @@ class App extends React.Component<{}, State> {
                     canSoundPlay={this.state.canSoundPlay}
                     isPlaying={this.state.isPlaying}
                     onPlayButtonClick={this.togglePlayingState}
+                    bpm={this.state.bpm}
+                    onBpmChanged={this.changeBpm}
                 />
             </MuiThemeProvider>
         );
@@ -110,6 +113,10 @@ class App extends React.Component<{}, State> {
         const currentIndex = this.state.currentNoteIndex == null ? 0 : this.state.currentNoteIndex;
         const index = (currentIndex + 1) % 16;
         this.setState({...this.state, currentNoteIndex: index});
+    }
+
+    changeBpm = (bpm: number) => {
+        this.setState({...this.state, bpm: bpm});
     }
 
     playDrums = (index: number) => {
