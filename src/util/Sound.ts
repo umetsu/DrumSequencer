@@ -9,7 +9,7 @@ declare namespace window {
 
 export default class Sound {
 
-    private fileUrl: string;
+    private readonly fileUrl: string;
     private audioContext: AudioContext;
     private buffer: AudioBuffer;
 
